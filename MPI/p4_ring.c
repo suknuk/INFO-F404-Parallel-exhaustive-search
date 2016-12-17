@@ -23,23 +23,6 @@ int main(int argc, char* argv[])
 		MPI_Send(&token, 1, MPI_INT, (id + 1) % world_size, 0, MPI_COMM_WORLD);
 	}
 
-	
-	/*
-	if (id != 0) {
-		MPI_Recv(&token, 1, MPI_INT, id - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		std::cout << id << " received " << token << " from " << (id - 1) << std::endl;
-	} else {
-		token = -1;
-	}
-	
-	MPI_Send(&token, 1, MPI_INT, (id + 1) % world_size, 0, MPI_COMM_WORLD);
-	
-	if (id == 0) {
-		MPI_Recv(&token, 1, MPI_INT, world_size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		std::cout << id << " received " << token << " from " << world_size - 1 << std::endl;
-	}*/
-
-
 	MPI_Finalize();
 
 	return 0;
