@@ -11,14 +11,6 @@ bool is_word_equal(const unsigned char *c1, const unsigned char *c2, int length)
 		}
 	}
 	return true;
-	/*
-	while (*c1 || *c2) {
-		if (*c1++ != *c2++) {
-			return false;
-		}
-	}
-	return true;
-	*/
 }
 
 void increment_word(unsigned char *word, int length)
@@ -62,13 +54,21 @@ bool are_n_bits_equal(unsigned char *word1, unsigned char *word2, int word_lengt
 		}
 	}
 
-	print_word(c1, word_length);
-	print_word(c2, word_length);
+	//print_word(c1, word_length);
+	//print_word(c2, word_length);
 
 	return is_word_equal(c1,c2,word_length);;
 }
 
 void print_word(unsigned char *c1, int length)
+{
+	for (int i = 0; i < length; i++) {
+		printf("%02x", c1[i]);
+	}
+	printf("\n");
+}
+
+void print_word(const unsigned char *c1, int length)
 {
 	for (int i = 0; i < length; i++) {
 		printf("%02x", c1[i]);
