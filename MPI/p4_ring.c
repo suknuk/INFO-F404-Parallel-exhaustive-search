@@ -1,4 +1,5 @@
 #include <iostream>
+#include <unistd.h> // usleep
 #include <mpi.h>
 
 int main(int argc, char* argv[])
@@ -20,6 +21,9 @@ int main(int argc, char* argv[])
 		MPI_Recv(&token, 1, MPI_INT, id - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		std::cout << id << " received " << token << " from " << (id - 1) << std::endl;
 		token++;
+		std::cout << id << " going to sleep" << std::endl;
+		usleep(1000000);
+		std::cout << id << " waking up!" << std::endl;
 		MPI_Send(&token, 1, MPI_INT, (id + 1) % world_size, 0, MPI_COMM_WORLD);
 	}
 
