@@ -16,14 +16,19 @@ int main()
 	
 
 	unsigned char t[] = "hello";
-	unsigned char start[] = "abc";
-	unsigned char end[] = "abc";
+	unsigned char start[] = {90 , 255, 254};
+	unsigned char end[] = {91, 0, 1};
 
 	std::vector<std::vector<unsigned char*> > a;
-	a = do_compare(t,start,end);
+	//a = do_compare(t,5,start,end,3);
 
-	//printf("%s\n", str);
-	std::cout << str << hash << std::endl;;
+	//std::cout << str << hash << std::endl;;
+	
+	unsigned char bit1[] = {90 , 12, 90};
+	unsigned char bit2[] = {12 , 13, 90};
+
+	std::cout << "equal bits : " << are_n_bits_equal(bit1,bit2,3,9) << std::endl;
+
 
 	/*
 	for (int i = 0; i < 20; i++)
