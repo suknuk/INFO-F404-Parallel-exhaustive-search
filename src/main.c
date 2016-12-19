@@ -88,7 +88,9 @@ int main(int argc, char* argv[])
 			// Send the LSB	
 			MPI_Send(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
 					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-			
+		
+			print_word(start_space, search_space_nr);
+
 			free(tmp);
 		}
 		printf("There is no more work to do\n");
@@ -102,7 +104,6 @@ int main(int argc, char* argv[])
 			// Send that work is finished
 			MPI_Send(&status_msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 			finished_counter++;
-			printf("%d\n", finished_counter);
 		}
 		printf("everyone finished\n");
 

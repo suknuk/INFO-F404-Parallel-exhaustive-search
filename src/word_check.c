@@ -37,8 +37,15 @@ void increment_search_space(unsigned char *word, int length)
 			word[x] = 255;
 		}
 	} else {
-		// special full case
-		if (word[0] == 255) {
+		// special full case - all are at 255
+		bool full = true;
+		for (int x = 0; x < length - 2; x++) {
+			if (word[x] != 255) {
+				full = false;
+				break;
+			}
+		}
+		if (full) {
 			word[length-1] = 255;
 			word[length-2] = 255;
 			return;
