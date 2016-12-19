@@ -28,6 +28,35 @@ void increment_word(unsigned char *word, int length)
 	}
 }
 
+void increment_search_space(unsigned char *word, int length)
+{
+	// if the search space is small we only have 1 'space'
+	// search space is in x.x.x...x.1.0.0 to x..1.255.255
+	if (length < 3) {
+		for (int x = 0; x < length; x++) {
+			word[x] = 255;
+		}
+	} else {
+		// special full case
+		if (word[0] == 255) {
+			word[length-1] = 255;
+			word[length-2] = 255;
+			return;
+		}
+		bool overflow = true;
+		for (int x = length - 3; x >= 0 && overflow; x--) {
+			// byte at pos is at maximum -> set to zero and +1 to word[current-1]
+			if (word[x] == 255) {
+				word[x] = (unsigned) 0;
+			} else {
+				word[x] = (int)word[x] + 1;
+				overflow = false;
+			}
+		}
+	}
+}
+
+
 bool are_n_bits_equal(unsigned char *word1, unsigned char *word2, int word_length, int nr_bits)
 {
 	// total shifts to the left
