@@ -8,7 +8,9 @@ bool is_word_equal(const unsigned char *c1, const unsigned char *c2, int length)
 void increment_word(unsigned char *word, int length);
 
 // Check bits LSB are equal
-bool are_n_bits_equal(unsigned char *c1, unsigned char *c2, int word_length, int nr_bits);
+bool are_n_bits_equal(unsigned char *c1, unsigned char *c2, int word_length, int LSB_length, int nr_bits);
+
+void get_LSB(unsigned char* word, unsigned char* lsb, int lsb_length, int word_length, int nr_bits);
 
 void print_word(unsigned char *c1, int length);
 void print_word(const unsigned char *c1, int length);

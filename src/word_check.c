@@ -2,6 +2,7 @@
 //#include <iostream>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 bool is_word_equal(const unsigned char *c1, const unsigned char *c2, int length)
 {
@@ -60,10 +61,43 @@ bool are_n_bits_equal(unsigned char *word1, unsigned char *word2, int word_lengt
 	return is_word_equal(c1,c2,word_length);;
 }
 
+void get_LSB(unsigned char* word, unsigned char* lsb, int lsb_length, int word_length, int nr_bits)
+{
+	//int how_many_chars = nr_bits/8 + 1;
+	//unsigned char lsb[how_many_chars];
+	// total shifts to the left
+	int total_bits = word_length * 8;
+	int shift = total_bits - nr_bits;
+
+	// make a copy
+	unsigned char c[word_length];
+	for (int i = 0; i < word_length; i++) {
+		c[i] = word[i];
+	}
+
+	// apply the shift
+	for (int x = 0; x < word_length; x++) {
+		if (shift >= 8) {
+			c[x] = 0;
+			shift -= 8;
+		} else {
+			// left then right so delete #shift bits
+			c[x] = c[x] << shift;
+			c[x] = c[x] >> shift;
+			break;
+		}
+	}
+
+	// copy the bytes in new 
+	for (int i = 0; i < lsb_length; i++) {
+		lsb[lsb_length-i-1] = c[word_length-i-1];
+	}
+}
+
 void print_word(unsigned char *c1, int length)
 {
 	for (int i = 0; i < length; i++) {
-		printf("%02x", c1[i]);
+		printf("%02x ", c1[i]);
 	}
 	printf("\n");
 }
@@ -71,7 +105,7 @@ void print_word(unsigned char *c1, int length)
 void print_word(const unsigned char *c1, int length)
 {
 	for (int i = 0; i < length; i++) {
-		printf("%02x", c1[i]);
+		printf("%02x ", c1[i]);
 	}
 	printf("\n");
 }
