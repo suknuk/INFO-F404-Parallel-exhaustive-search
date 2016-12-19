@@ -1,5 +1,4 @@
-//#include <stdio.h>		// CL output
-#include <iostream>
+#include <stdio.h>		// CL output
 #include <stdlib.h>
 #include <string.h>
 #include <mpi.h>		// MPI methods
@@ -30,8 +29,6 @@ int main(int argc, char* argv[])
 	int search_space_nr = atoi(argv[2]);
 	int lsb_nr = atoi(argv[4]);
 
-	printf("search space: %d , lsb: %d\n", search_space_nr, lsb_nr);
-
 	double time_start = MPI_Wtime();
 
 	// char length of the LSB char array
@@ -50,55 +47,60 @@ int main(int argc, char* argv[])
 	// host	
 	if (id == 0) {
 		// select a word in the space
-		unsigned char word[search_space_nr];
+		unsigned char start_word[search_space_nr];
+		unsigned char end_word[search_space_nr];
 		for (int i = 0; i < search_space_nr; i++) {
-			word[i] = 61;
-		}
-		unsigned char hash[SHA_DIGEST_LENGTH];
-		SHA1(word, sizeof(word) - 1, hash);
-
-		unsigned char LSB[lsb_length];
-		get_LSB(hash, LSB, lsb_length, SHA_DIGEST_LENGTH, lsb_nr);
-
-		printf("hash :");
-		print_word(hash, SHA_DIGEST_LENGTH);
-
-		// initialize start and end
-		unsigned char start_space[search_space_nr];
-		unsigned char end_space[search_space_nr];
-		for (int i = 0; i < search_space_nr; i++) {
-			start_space[i] = 0;
-			end_space[i] = 255;
+			start_word[i] = 0;
+			end_word[i] = 255;
 		}
 
-		// iterate the whole space
-		while (!is_word_equal(start_space, end_space, search_space_nr)){
-			// wait that workers ask for work
-			MPI_Recv(&status_msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
-					MPI_COMM_WORLD, &status);
-			// create copy of current space
-			unsigned char *tmp = (unsigned char*)malloc(search_space_nr);
-			memcpy(tmp, start_space, search_space_nr);
-			
-			increment_search_space(start_space, search_space_nr);
-			
-			// Send that there is work to do
-			MPI_Send(&status_msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-			
-			// send next space to idle worker
-			MPI_Send(tmp, search_space_nr, MPI_UNSIGNED_CHAR, 
-					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-			MPI_Send(start_space, search_space_nr, MPI_UNSIGNED_CHAR, 
-					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-			// Send the LSB	
-			MPI_Send(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
-					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+		//search every possible comination of bits
+		while (!is_word_equal(start_word, end_word, search_space_nr)){
+			//unsigned char hash[SHA_DIGEST_LENGTH];
+			unsigned char *hash = (unsigned char*)malloc(SHA_DIGEST_LENGTH);
+			// create tmp of start_word as otherwise SHA gives always the same hash?
+			unsigned char *tmp_word = (unsigned char*)malloc(search_space_nr);
+			memcpy(tmp_word, start_word, search_space_nr);
+			SHA1(tmp_word, sizeof(tmp_word) - 1, hash);
+			free(tmp_word);
 
-			free(tmp);
+			unsigned char LSB[lsb_length];
+			get_LSB(hash, LSB, lsb_length, SHA_DIGEST_LENGTH, lsb_nr);
+			// initialize start and end
+			unsigned char start_space[search_space_nr];
+			unsigned char end_space[search_space_nr];
+			for (int i = 0; i < search_space_nr; i++) {
+				start_space[i] = 0;
+				end_space[i] = 255;
+			}
+			// iterate the whole space
+			while (!is_word_equal(start_space, end_space, search_space_nr)){
+				// wait that workers ask for work
+				MPI_Recv(&status_msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+						MPI_COMM_WORLD, &status);
+				// create copy of current space
+				unsigned char *tmp = (unsigned char*)malloc(search_space_nr);
+				memcpy(tmp, start_space, search_space_nr);
+				increment_search_space(start_space, search_space_nr);
+				// Send that there is work to do
+				MPI_Send(&status_msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+				// send next space to idle worker
+				MPI_Send(tmp, search_space_nr, MPI_UNSIGNED_CHAR, 
+						status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+				MPI_Send(start_space, search_space_nr, MPI_UNSIGNED_CHAR, 
+						status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+				// Send the LSB	
+				MPI_Send(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
+						status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+				free(tmp);
+			}
+			increment_word(start_word, search_space_nr);
+			free(hash);
 		}
+
 		printf("There is no more work to do\n");
 		// finished searching the space - now wait for all workers to finish
-
+		double worked_time[world_size];
 		int finished_counter = 1;
 		while(finished_counter != world_size){
 			MPI_Recv(&status_msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
@@ -106,10 +108,17 @@ int main(int argc, char* argv[])
 			status_msg = 0; // the no more work flag
 			// Send that work is finished
 			MPI_Send(&status_msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+			// receive worked time
+			MPI_Recv(&worked_time[status.MPI_SOURCE], 1, MPI_DOUBLE, status.MPI_SOURCE, MPI_ANY_TAG,
+					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			
 			finished_counter++;
 		}
+		worked_time[id] = MPI_Wtime() - time_start;
 		printf("everyone finished\n");
-
+		for (int i = 0; i < world_size; i++) {
+			printf("Process %d : %f\n", i, worked_time[i]);
+		}
 	} else {
 		// Get work request
 		while(true) {
@@ -120,6 +129,9 @@ int main(int argc, char* argv[])
 			MPI_Recv(&status_msg, 1, MPI_INT, 0, MPI_ANY_TAG,
 					MPI_COMM_WORLD, &status);
 			if (status_msg == 0) {
+				// send worked time
+				double time_end = MPI_Wtime() - time_start;
+				MPI_Send(&time_end, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 				break;
 			}
 
@@ -143,12 +155,7 @@ int main(int argc, char* argv[])
 			free(start_space);
 			free(end_space);
 		}
-		printf("%d has finished working\n", id);
 	}	
-
-	double time_end;
-
 	MPI_Finalize();
-
 	return 0;
 }
