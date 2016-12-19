@@ -53,7 +53,6 @@ int main(int argc, char* argv[])
 			start_word[i] = 0;
 			end_word[i] = 255;
 		}
-
 		//search every possible comination of bits
 		while (!is_word_equal(start_word, end_word, search_space_nr)){
 			//unsigned char hash[SHA_DIGEST_LENGTH];
@@ -85,6 +84,8 @@ int main(int argc, char* argv[])
 				// Send that there is work to do
 				MPI_Send(&status_msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 				// send next space to idle worker
+				MPI_Send(start_word, search_space_nr, MPI_UNSIGNED_CHAR, 
+						status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 				MPI_Send(tmp, search_space_nr, MPI_UNSIGNED_CHAR, 
 						status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 				MPI_Send(start_space, search_space_nr, MPI_UNSIGNED_CHAR, 
@@ -134,12 +135,13 @@ int main(int argc, char* argv[])
 				MPI_Send(&time_end, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
 				break;
 			}
-
+			unsigned char *word = (unsigned char*)malloc(search_space_nr);
 			unsigned char *start_space = (unsigned char*)malloc(search_space_nr);
 			unsigned char *end_space = (unsigned char*)malloc(search_space_nr);
 			unsigned char *LSB = (unsigned char*)malloc(lsb_length);
-			
 			//receive search space	
+			MPI_Recv(word, search_space_nr, MPI_UNSIGNED_CHAR, 
+					0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			MPI_Recv(start_space, search_space_nr, MPI_UNSIGNED_CHAR, 
 					0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			MPI_Recv(end_space, search_space_nr, MPI_UNSIGNED_CHAR, 
@@ -147,10 +149,10 @@ int main(int argc, char* argv[])
 			// receive LSB
 			MPI_Recv(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
 					0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	
 			// Calculate the hash
-			do_compare(LSB, lsb_length,lsb_nr, start_space, end_space,search_space_nr, id);
-
+			do_compare(LSB, lsb_length,lsb_nr, word, start_space, end_space,search_space_nr, id);
+			
+			free(word);
 			free(LSB);
 			free(start_space);
 			free(end_space);
