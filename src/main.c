@@ -112,14 +112,16 @@ int main(int argc, char* argv[])
 			// receive worked time
 			MPI_Recv(&worked_time[status.MPI_SOURCE], 1, MPI_DOUBLE, status.MPI_SOURCE, MPI_ANY_TAG,
 					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			
 			finished_counter++;
 		}
 		worked_time[id] = MPI_Wtime() - time_start;
 		printf("everyone finished\n");
+		FILE *file = fopen("time.txt", "w");
 		for (int i = 0; i < world_size; i++) {
-			printf("Process %d : %f\n", i, worked_time[i]);
+			fprintf(file, "Process %d : %f seconds\n", i, worked_time[i]);
+			printf("Process %d : %f seconds\n", i, worked_time[i]);
 		}
+		fclose(file);
 	} else {
 		// Get work request
 		while(true) {

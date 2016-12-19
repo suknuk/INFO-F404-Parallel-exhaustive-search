@@ -31,14 +31,14 @@ void do_compare(unsigned char* LSB, int LSB_length, int nr_bits, unsigned char* 
 				sprintf(&word_hex[i*2], "%02x", word[i]);
 			}
 			// print findings to file
-			char filename[80];
+			char filename[90];
 			sprintf(filename, "collisions_%d_bits_on_%d_bytes_msg_%s.csv", 
 					nr_bits, search_length, word_hex);
 			
 			// check if file exists, if not write the headings
 			if ( access(filename, W_OK ) == -1) {
 				FILE *headings = fopen(filename, "w");
-				fprintf(headings, "original word, LSB, found word, matching LSB, matching hash\n");
+				fprintf(headings, "original word, LSB of hash, found word, matching LSB, matching hash\n");
 				fclose(headings);
 			}
 			
@@ -50,7 +50,7 @@ void do_compare(unsigned char* LSB, int LSB_length, int nr_bits, unsigned char* 
 			}
 			fprintf(file, ",");
 
-			//print original LSB
+			//print original LSB of hash
 			for (int i = 0; i < LSB_length; i ++) {
 				fprintf(file, "%02x", LSB[i]);
 			}
