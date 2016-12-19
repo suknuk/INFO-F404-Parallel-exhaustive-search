@@ -1,0 +1,15 @@
+#!/bin/bash -l
+
+#PBS -l nodes=2:ppn=8
+#PBS -l walltime=05:00:00
+#PBS -j oe
+#PBS -N RL-NA_Kamikaze
+#PBS -o Kamikaze_out.txt
+
+echo "Running job on $HOST - " 'date'
+
+module load openmpi/1.4.3/gcc/4.4.7
+mpiCC main.c word_check.c worker.c -o main -lcrypto
+mpirun ./main -b 16 -n 64
+
+echo "Done"

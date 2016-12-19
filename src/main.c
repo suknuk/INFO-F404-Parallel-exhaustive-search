@@ -99,7 +99,6 @@ int main(int argc, char* argv[])
 			free(hash);
 		}
 
-		printf("There is no more work to do\n");
 		// finished searching the space - now wait for all workers to finish
 		double worked_time[world_size];
 		int finished_counter = 1;
@@ -115,11 +114,9 @@ int main(int argc, char* argv[])
 			finished_counter++;
 		}
 		worked_time[id] = MPI_Wtime() - time_start;
-		printf("everyone finished\n");
 		FILE *file = fopen("time.txt", "w");
 		for (int i = 0; i < world_size; i++) {
 			fprintf(file, "Process %d : %f seconds\n", i, worked_time[i]);
-			printf("Process %d : %f seconds\n", i, worked_time[i]);
 		}
 		fclose(file);
 	} else {
