@@ -54,9 +54,14 @@ int main(int argc, char* argv[])
 		for (int i = 0; i < search_space_nr; i++) {
 			word[i] = 61;
 		}
+		unsigned char hash[SHA_DIGEST_LENGTH];
+		SHA1(word, sizeof(word) - 1, hash);
 
 		unsigned char LSB[lsb_length];
-		get_LSB(word, LSB, lsb_length, search_space_nr, lsb_nr);
+		get_LSB(hash, LSB, lsb_length, SHA_DIGEST_LENGTH, lsb_nr);
+
+		printf("hash :");
+		print_word(hash, SHA_DIGEST_LENGTH);
 
 		// initialize start and end
 		unsigned char start_space[search_space_nr];
@@ -88,8 +93,6 @@ int main(int argc, char* argv[])
 			// Send the LSB	
 			MPI_Send(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
 					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-		
-			print_word(start_space, search_space_nr);
 
 			free(tmp);
 		}
@@ -132,7 +135,10 @@ int main(int argc, char* argv[])
 			// receive LSB
 			MPI_Recv(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
 					0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		
+	
+			// Calculate the hash
+			do_compare(LSB, lsb_length,lsb_nr, start_space, end_space,search_space_nr, id);
+
 			free(LSB);
 			free(start_space);
 			free(end_space);
@@ -141,12 +147,6 @@ int main(int argc, char* argv[])
 	}	
 
 	double time_end;
-
-
-	unsigned char start[] = "aaa";
-	unsigned char end[] = "dcc";
-
-//	do_compare(LSB, lsb_length, nr_bits, start, end, 3);
 
 	MPI_Finalize();
 

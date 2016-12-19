@@ -5,10 +5,9 @@
 #include "word_check.h"
 
 void do_compare(unsigned char* LSB, int LSB_length, int nr_bits,
-		unsigned char* start_search, unsigned char* end_search, int search_length)
+		unsigned char* start_search, unsigned char* end_search, int search_length, int id)
 {
-	print_word(LSB, LSB_length);
-	
+//	print_word(LSB, LSB_length);
 	while (!is_word_equal(start_search, end_search, search_length))
 	{
 		// initializing
@@ -25,8 +24,10 @@ void do_compare(unsigned char* LSB, int LSB_length, int nr_bits,
 		get_LSB(hash, hash_lsb, LSB_length, SHA_DIGEST_LENGTH,  nr_bits);
 
 		if (is_word_equal(LSB, hash_lsb, LSB_length)){
+			std::cout << id << " found LSB" << std::endl;
+			print_word(str, search_length);
 			print_word(hash,20);
-			print_word(hash_lsb, LSB_length);
+			//print_word(hash_lsb, LSB_length);
 		}
 		increment_word(start_search,search_length);
 	}
