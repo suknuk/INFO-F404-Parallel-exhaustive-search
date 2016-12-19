@@ -28,18 +28,36 @@ int main(int argc, char* argv[])
 	}
 
 	int search_space_nr = atoi(argv[2]);
-	int lsb = atoi(argv[4]);
+	int lsb_nr = atoi(argv[4]);
 
-	printf("search space: %d , lsb: %d\n", search_space_nr, lsb);
+	printf("search space: %d , lsb: %d\n", search_space_nr, lsb_nr);
 
 	double time_start = MPI_Wtime();
 
-	int status_msg = 0;
+	// char length of the LSB char array
+	int lsb_length = 0;
+	if (lsb_nr % 8 == 0) {
+		lsb_length = lsb_nr/8;
+	} else {
+		lsb_length = lsb_nr/8 + 1;
+	}
+	
+	// 0 = finished, 1 = work 
+	int status_msg = 1;
 	unsigned char search_space[search_space_nr];
 	
 	MPI_Status status;
 	// host	
 	if (id == 0) {
+		// select a word in the space
+		unsigned char word[search_space_nr];
+		for (int i = 0; i < search_space_nr; i++) {
+			word[i] = 61;
+		}
+
+		unsigned char LSB[lsb_length];
+		get_LSB(word, LSB, lsb_length, search_space_nr, lsb_nr);
+
 		// initialize start and end
 		unsigned char start_space[search_space_nr];
 		unsigned char end_space[search_space_nr];
@@ -58,57 +76,71 @@ int main(int argc, char* argv[])
 			memcpy(tmp, start_space, search_space_nr);
 			
 			increment_search_space(start_space, search_space_nr);
-		
+			
+			// Send that there is work to do
+			MPI_Send(&status_msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+			
 			// send next space to idle worker
-			MPI_Send(&tmp, search_space_nr, MPI_UNSIGNED_CHAR, 
+			MPI_Send(tmp, search_space_nr, MPI_UNSIGNED_CHAR, 
 					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
-			MPI_Send(&start_space, search_space_nr, MPI_UNSIGNED_CHAR, 
+			MPI_Send(start_space, search_space_nr, MPI_UNSIGNED_CHAR, 
+					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+			// Send the LSB	
+			MPI_Send(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
 					status.MPI_SOURCE, 0, MPI_COMM_WORLD);
 			
-			/*
-			printf("send space to %d\nstart :", status.MPI_SOURCE);
-			print_word(tmp, search_space_nr);
-			printf("end : ");
-			print_word(start_space, search_space_nr);
-			*/
+			free(tmp);
 		}
-
+		printf("There is no more work to do\n");
 		// finished searching the space - now wait for all workers to finish
 
-	}
-	else {
-		unsigned char start_space[search_space_nr];
-		unsigned char end_space[search_space_nr];
+		int finished_counter = 1;
+		while(finished_counter != world_size){
+			MPI_Recv(&status_msg, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+					MPI_COMM_WORLD, &status);
+			status_msg = 0; // the no more work flag
+			// Send that work is finished
+			MPI_Send(&status_msg, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+			finished_counter++;
+			printf("%d\n", finished_counter);
+		}
+		printf("everyone finished\n");
+
+	} else {
 		// Get work request
 		while(true) {
 			// send 'i am ready'
 			MPI_Send(&status_msg, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+			
+			// receive anser from host, either there is work or no work
+			MPI_Recv(&status_msg, 1, MPI_INT, 0, MPI_ANY_TAG,
+					MPI_COMM_WORLD, &status);
+			if (status_msg == 0) {
+				break;
+			}
+
+			unsigned char *start_space = (unsigned char*)malloc(search_space_nr);
+			unsigned char *end_space = (unsigned char*)malloc(search_space_nr);
+			unsigned char *LSB = (unsigned char*)malloc(lsb_length);
 			
 			//receive search space	
 			MPI_Recv(start_space, search_space_nr, MPI_UNSIGNED_CHAR, 
 					0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			MPI_Recv(end_space, search_space_nr, MPI_UNSIGNED_CHAR, 
 					0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			// receive LSB
+			MPI_Recv(LSB, lsb_length, MPI_UNSIGNED_CHAR, 
+					0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		
-			printf("%d received search space\n", id);
-			print_word(start_space, search_space_nr);
-			print_word(end_space, search_space_nr);
+			free(LSB);
+			free(start_space);
+			free(end_space);
 		}
+		printf("%d has finished working\n", id);
 	}	
 
 	double time_end;
 
-	unsigned char word[] = "Hello";
-	int nr_bits = 16;
-	int lsb_length = 0;
-	if (nr_bits % 8 == 0) {
-		lsb_length = nr_bits/8;
-	} else {
-		lsb_length = nr_bits/8 + 1;
-	}
-	
-	unsigned char LSB[lsb_length];
-	get_LSB(word, LSB, lsb_length, 5, nr_bits);
 
 	unsigned char start[] = "aaa";
 	unsigned char end[] = "dcc";
